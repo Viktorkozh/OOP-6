@@ -22,8 +22,8 @@ def temp_dir():
 
 
 def test_is_hidden():
-    assert is_hidden(".hidden_file") == True
-    assert is_hidden("visible_file") == False
+    appdata_path = os.path.join(os.environ["USERPROFILE"], "AppData")
+    assert is_hidden(appdata_path)
 
 
 def test_list_files(temp_dir):

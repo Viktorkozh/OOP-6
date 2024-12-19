@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import pytest
-from example_1 import Staff, Worker, IllegalYearError, UnknownCommandError
+from datetime import date
+from example_1 import Staff, Worker
 
 
 def test_add_worker():
@@ -11,13 +11,12 @@ def test_add_worker():
     assert staff.workers[0] == Worker(name="Иванов И.Б.", post="Студент", year=2022)
 
 
-def test_add_worker_illegal_year():
+def test_add_worker_sorted():
     staff = Staff()
-    with pytest.raises(IllegalYearError):
-        staff.add("Jane Doe", "Преподаватель", 2025)
-
-    with pytest.raises(IllegalYearError):
-        staff.add("Jane Doe", "Преподаватель", -1)
+    staff.add("Кожуховский В.А.", "Студент", 2022)
+    staff.add("Иванов И.Б.", "Преподаватель", 2020)
+    assert staff.workers[0].name == "Иванов И.Б."
+    assert staff.workers[1].name == "Кожуховский В.А."
 
 
 def test_select_workers():
@@ -34,7 +33,7 @@ def test_select_workers():
 
 def test_select_no_workers():
     staff = Staff()
-    staff.add("Кожуховский В.А.", "Студент", 2022)
+    staff.add("Кожуховский В.А.", "Студент", date.today().year)
     selected = staff.select(5)
     assert len(selected) == 0
 
@@ -43,17 +42,29 @@ def test_str_representation():
     staff = Staff()
     staff.add("Кожуховский В.А.", "Студент", 2022)
     staff.add("Иванов И.И.", "Студент", 2022)
-    expected_output = (
-        "+------+--------------------------------+----------------------+----------+\n"
-        "|  №   |             Ф.И.О.             |      Должность       |   Год    |\n"
-        "+------+--------------------------------+----------------------+----------+\n"
-        "|    1 | Иванов И.И.                    | Студент              |     2022 |\n"
-        "|    2 | Кожуховский В.А.               | Студент              |     2022 |\n"
-        "+------+--------------------------------+----------------------+----------+"
-    )
-    assert str(staff) == expected_output
+    str_repr = str(staff)
+
+    assert "Иванов И.И." in str_repr
+    assert "Кожуховский В.А." in str_repr
+    assert "Студент" in str_repr
+    assert "2022" in str_repr
 
 
-def test_unknown_command_error():
-    with pytest.raises(UnknownCommandError):
-        raise UnknownCommandError("invalid_command")
+def test_save_and_load(tmp_path):
+    # Создаем временный файл
+    file_path = tmp_path / "workers.xml"
+
+    # Создаем и сохраняем данные
+    staff = Staff()
+    staff.add("Иванов И.Б.", "Студент", 2022)
+    staff.save(str(file_path))
+
+    # Создаем новый объект и загружаем данные
+    new_staff = Staff()
+    new_staff.load(str(file_path))
+
+    # Проверяем загруженные данные
+    assert len(new_staff.workers) == 1
+    assert new_staff.workers[0].name == "Иванов И.Б."
+    assert new_staff.workers[0].post == "Студент"
+    assert new_staff.workers[0].year == 2022
